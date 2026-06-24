@@ -1,90 +1,79 @@
-#include <iostream>
+#include "rtweekend.h"
+#include <unistd.h> 
+#include <SFML/Graphics.hpp>
 
-#include "color.h"
-#include "vec3.h"
-#include "ray.h"
-
-double hit_sphere(const point3& center, double radius, const ray& r) {
-    vec3 oc = center - r.origin();
-    auto a = r.direction().length_squared();
-    auto h = dot(r.direction(), oc);
-    auto c = oc.length_squared() - radius*radius;
-    auto discriminant = h*h - a*c;
-
-    if (discriminant < 0) {
-        return -1.0;
-    } else {
-        return (h - std::sqrt(discriminant)) / a;
-    }
-}
-
-color ray_color(const ray& r) {
-    auto t = hit_sphere(point3(0,0,-1), 0.5, r);
-    if (t > 0.0) {
-        vec3 N = unit_vector(r.at(t) - vec3(0,0,-1));
-        return 0.5*color(N.x()+1, N.y()+1, N.z()+1);
-    }
-
-    vec3 unit_direction = unit_vector(r.direction());
-    auto a = 0.5*(unit_direction.y() + 1.0);
-    return (1.0-a)*color(1.0, 1.0, 1.0) + a*color(0.5, 0.7, 1.0);
-}
-
-int main(){
-    // Image
-    auto aspect_ratio = 16.0 / 9.0;
-    int image_width = 400;
-
-    int image_height  = int(image_width / aspect_ratio);
-    image_height = (image_height<1) ? 1:image_height; 
-
-    // Camera
-    auto focal_length = 1.0;
-    auto viewport_height = 2.0;
-    auto viewport_width = viewport_height* (double(image_width)/image_height);
-    auto camera_center = point3(0,0,0);
-
-    //viewport vector calculation
-    auto viewport_u = vec3(viewport_width,0,0);
-    auto viewport_v = vec3(0, -viewport_height, 0);
-
-    ///delta vectors from pixel to pixel
-    auto pixel_delta_u = viewport_u / image_width;
-    auto pixel_delta_v = viewport_v / image_height;
-
-    //upper left pixel location calculation
-    auto viewport_upper_left = camera_center - vec3(0,0,focal_length) - viewport_u/2 - viewport_v/2;
-    auto pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
+#include "camera.h"
+#include "hittable.h"
+#include "hittable_list.h"
+#include "sphere.h"
 
 
-    //Render
-    std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
+int main() {
 
-    for(int j=0; j<image_height; j++){
-    //     int progress = (int)((double)j/(image_height-1) * 10);
-        
-    //     // Cosmetic progression bar
-    //     std::clog << "\r [";
-    //     for (int i=0; i<progress; i++){
-    //         std::clog <<"|";
-    //     }
-    //     for(int i=progress; i<10; i++){
-    //         std::clog<<"-";
-    //     }
-    //     std::clog << "]"<<std::flush;
+    hittable_list world;
+
+    world.add(make_shared<sphere>(point3(0,0,-1), 0.5));
+    world.add(make_shared<sphere>(point3(0,-100.5,-1), 100));
+
+    camera cam;
+
+    cam.aspect_ratio = 16.0 / 9.0;
+    cam.image_width  = 100;
+    cam.update_image_height();
+    cam.samples_per_pixel = 10;
+
+    double cam_x =0;
+    double cam_y =0;
+    double cam_z =0;
+    const double cam_speed = 0.5;
+
+    int move=0;
+
+    sf::RenderWindow window(
+        sf::VideoMode(cam.image_width, cam.get_image_height()),
+        "Ray Tracer"
+    );
+    sf::Texture texture;
+    texture.create(cam.image_width, cam.get_image_height());
+    sf::Sprite sprite(texture);
 
 
-        for (int i=0; i<image_width; i++){
-            auto pixel_center = pixel00_loc + (i * pixel_delta_u) + (j * pixel_delta_v);
-            auto ray_direction = pixel_center - camera_center;
-            ray r(camera_center, ray_direction);
+    cam.set_camera_center(0,0,0);
+    // cam.render(world);    
 
-            color pixel_color = ray_color(r);
-            write_color(std::cout, pixel_color);
+    // exit(0);
+    while(window.isOpen()){
+        sf::Event event;
+    
+        while(window.pollEvent(event)){
+            if(event.type == sf::Event::Closed){
+                window.close();
+            }
         }
-    }
+        
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
+            cam_z -= cam_speed;
 
-    std::clog << "\rDone.                 \n";
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
+            cam_z += cam_speed;
+
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
+            cam_x -= cam_speed;
+
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
+            cam_x += cam_speed;
+
+        cam.set_camera_center(cam_x,cam_y,cam_z);
+    
+        std::clog << "\rCamera position: " << cam_x << "      " << std::flush;
+
+        std::vector<uint8_t> frame = cam.render_frame(world);
+        texture.update(frame.data());
+
+        window.clear();
+        window.draw(sprite);
+        window.display();
+    }
 }
 
 
