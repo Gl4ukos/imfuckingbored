@@ -77,7 +77,17 @@ class camera{
         return image_height;
     }
 
-    void set_camera_center(int x, int y, int z){
+    vec3 get_forward()const{
+        return forward;
+    }
+    vec3 get_right()const{
+        return right;
+    }
+    vec3 get_up()const{
+        return up;
+    }
+
+    void set_camera_center(double x, double y, double z){
         center = point3(x,y,z);
     }
 

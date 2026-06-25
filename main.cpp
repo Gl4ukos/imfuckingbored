@@ -22,10 +22,9 @@ int main() {
     cam.update_image_height();
     cam.samples_per_pixel = 10;
 
-    double cam_x =0;
-    double cam_y =0;
-    double cam_z =0;
-    const double cam_speed = 0.5;
+    const double cam_translation_speed = 0.2;
+    const double cam_rotation_speed = 0.1;
+    vec3 cam_pos(0,0,0);
 
     int move=0;
 
@@ -39,9 +38,7 @@ int main() {
 
 
     cam.set_camera_center(0,0,0);
-    // cam.render(world);    
 
-    // exit(0);
     while(window.isOpen()){
         sf::Event event;
     
@@ -50,39 +47,35 @@ int main() {
                 window.close();
             }
         }
+        vec3 move_direction(0,0,0);
         
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::W))
-            cam_z -= cam_speed;
-
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::S))
-            cam_z += cam_speed;
-
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::A))
-            cam_x -= cam_speed;
-
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::D))
-            cam_x += cam_speed;
-
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space))
-            cam_y -= cam_speed;
-
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
-            cam_y += cam_speed;
-
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q))
-            cam.yaw -= cam_speed;
-
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::E))
-            cam.yaw += cam_speed;
-
-
-
-
-
-
-        cam.set_camera_center(cam_x,cam_y,cam_z);
-    
-        std::clog << "\rCamera position: " << cam_x << "      " << std::flush;
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)){
+            move_direction += cam.get_forward()*cam_translation_speed;
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)){
+            move_direction += - cam.get_forward()*cam_translation_speed;
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)){
+            move_direction += - cam.get_right()*cam_translation_speed;
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)){
+            move_direction += cam.get_right()*cam_translation_speed;
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Space)){
+            move_direction += cam.get_up()*cam_translation_speed;
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)){
+            move_direction += - cam.get_up()*cam_translation_speed;
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q)){
+            cam.yaw -= cam_rotation_speed;
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::E)){
+            cam.yaw += cam_rotation_speed;
+        }
+        cam_pos += move_direction;
+        cam.set_camera_center(cam_pos.x(), cam_pos.y(), cam_pos.z());
+        std::cout<<"\r"<<cam_pos.x()<<std::flush;
 
         std::vector<uint8_t> frame = cam.render_frame(world);
         texture.update(frame.data());
