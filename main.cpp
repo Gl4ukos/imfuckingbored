@@ -20,7 +20,7 @@ int main() {
     cam.aspect_ratio = 16.0 / 9.0;
     cam.image_width  = 100;
     cam.update_image_height();
-    cam.samples_per_pixel = 10;
+    cam.samples_per_pixel = 4;
 
     const double cam_translation_speed = 0.2;
     const double cam_rotation_speed = 0.1;
