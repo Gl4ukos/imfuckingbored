@@ -2,6 +2,7 @@
 #define CAMERA_H
 
 #include "hittable.h"
+#include "vec3.h"
 
 class camera{
     public:
@@ -9,6 +10,7 @@ class camera{
         int image_width = 100;
         int samples_per_pixel = 10;   // Count of random samples for each pixel
         int max_depth = 10;   // Maximum number of ray bounces into scene
+        double yaw =0;
 
     void render(const hittable& world) {
         initialize();
@@ -86,11 +88,27 @@ class camera{
         point3 pixel00_loc; // location of pixel 0,0
         vec3 pixel_delta_u; //offset to pixel to the right
         vec3 pixel_delta_v; //offset to pixel below
+        vec3 forward = vec3(0,0,-1);;
+        vec3 right = vec3(1,0,0);
+        vec3 up = vec3(0,1,0);
+        vec3 world_up = vec3(0,1,0);
+
 
         void initialize(){
             image_height = int(image_width / aspect_ratio);
             image_height = (image_height < 1) ? 1:image_height;
             pixel_samples_scale = 1.0 / samples_per_pixel;
+
+
+            //camera rotation
+            forward = vec3(
+                sin(yaw),
+                0,
+                -cos(yaw)
+            );
+
+            right = unit_vector(cross(forward, world_up));
+            up = cross(right, forward);
 
             // Viewpoint dimensions
             auto focal_length = 1.0;
@@ -98,8 +116,8 @@ class camera{
             auto viewport_width = viewport_height * (double(image_width)/image_height);
 
             //calc vectors across the horizontal and down the vertical viewpont edges
-            auto viewport_u = vec3(viewport_width, 0, 0);
-            auto viewport_v = vec3(0, -viewport_height, 0);
+            vec3 viewport_u = viewport_width * right;
+            vec3 viewport_v = - viewport_height * up;
 
             //calc horizontal and vertical delta vectors from pixel to pixel
             pixel_delta_u = viewport_u / image_width;
@@ -107,7 +125,11 @@ class camera{
 
             //calc location of upper left pixel
             auto viewport_upper_left =
-                center - vec3(0, 0, focal_length) - viewport_u/2 - viewport_v/2;
+                center 
+                + focal_length * forward
+                - viewport_u/2 
+                - viewport_v/2;
+
             pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + pixel_delta_v);
 
         }

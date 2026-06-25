@@ -69,6 +69,15 @@ int main() {
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
             cam_y += cam_speed;
 
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Q))
+            cam.yaw -= cam_speed;
+
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::E))
+            cam.yaw += cam_speed;
+
+
+
+
 
 
         cam.set_camera_center(cam_x,cam_y,cam_z);
